@@ -1,0 +1,25 @@
+Creating an application with MEAN Stack.
+
+https://github.com/zictechng/Angular_projectBank.git
+
+STeps to follow:
+
+Install node in your system
+Install npm in your system
+Install angular globally in your system.
+
+Create a folder anywhere in your system to start your application.
+Open your Vscode and open the folder in Vscode
+
+Starting with the backend API development
+
+- run npm init 
+This will start with nodejs backend api development.
+
+
+
+
+
+
+
+

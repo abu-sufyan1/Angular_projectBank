@@ -1,0 +1,19 @@
+{
+  "name": "backend_api",
+  "version": "1.0.0",
+  "description": "Back demo application with MEAN Stack",
+  "main": "server.js",
+  "scripts": {
+   "start": "node server",
+   "dev": "nodemon server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "-": "^0.0.1",
+    "D": "^1.0.0",
+    "express": "^4.18.2",
+    "nodemon": "^2.0.22"
+  }
+}

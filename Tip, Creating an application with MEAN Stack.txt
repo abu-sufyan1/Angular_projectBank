@@ -1,6 +1,36 @@
 Creating an application with MEAN Stack.
 
-https://github.com/zictechng/Angular_projectBank.git
+-- How to push your project to git
+Create git repo, copy the url
+Open your project in Vscode and write
+
+git init
+git remote add origin <repo url here> Paste the copied repo url
+git remote -v  this will show if your git has be initialized
+
+It will look like this below:
+$ origin  git@github.com:your-username/repo-name.git (fetch)
+$ origin  git@github.com:your-username/repo-name.git (push)
+
+Next is to add, commit and push your project.
+
+git add .
+git commit -m "your commit"
+git push -u origin master
+
+* If it your first time, you will require to do this:
+
+git config --global user.email "you@example.com", put your git email address
+
+git config --global user.name "Your Name", put your git name as it is written in your git account then try the process again.
+This time, everything should be fine.
+
+To create branch of your git, use the follow command:
+
+git checkout -b <new-branch-name>
+
+Remember to commit and push regularly, and give yourself descriptive commit messages so that it’s easy to track the progress of your project, and see where to go back to if you need to revert to a previous state.
+https://medium.com/swlh/using-git-how-to-go-back-to-a-previous-commit-8579ccc8180f
 
 STeps to follow:
 
@@ -13,8 +43,30 @@ Open your Vscode and open the folder in Vscode
 
 Starting with the backend API development
 
-- run npm init 
-This will start with nodejs backend api development.
+-- run npm init -y 
+Run this inside the backend api folder
+
+Install express
+-- npm i express
+Install nodemon: this is only for development to enable your server to be auto start
+
+-- npm i nodemon - D
+
+Under the scripts inside package.json remove the test and add:
+"start": "node server",
+"dev": "nodemon server"
+
+-- create file to avoid sending node_modules to github
+.gitignore
+Then write: node_modules 
+
+-- create a server file
+server.js  and write some code inside
+
+To run this server: write
+npm run dev
+
+
 
 
 

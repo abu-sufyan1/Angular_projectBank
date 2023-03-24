@@ -32,6 +32,9 @@ git checkout -b <new-branch-name>
 Remember to commit and push regularly, and give yourself descriptive commit messages so that it’s easy to track the progress of your project, and see where to go back to if you need to revert to a previous state.
 https://medium.com/swlh/using-git-how-to-go-back-to-a-previous-commit-8579ccc8180f
 
+
+Building the backend of the application:
+
 STeps to follow:
 
 Install node in your system
@@ -66,7 +69,113 @@ server.js  and write some code inside
 To run this server: write
 npm run dev
 
+-- Create some middleware for the application
+Type of middleware are:
 
+1, Built-in middleware
+2, Custom Middleware
+3, 3rd party middleware
+
+1, app.use(express.json())
+
+For custom middleware, install date-fns uuid
+2, npm i date-fns uuid
+
+the uuid is use to create a specific ID for each record
+
+Go inside the middleware folder and create a file name
+logger.js and then write some codes in it.
+also create errorhandler.js file and write your code insde
+
+3, For 3rd party middleware, install cookie parser, CORS
+(crose origin resource sharing).
+
+this third party middleware is very important whenever you are developing api application in your project.
+
+npm i cookie-parser
+
+npm i cors   Install CORS for your application
+
+Go to the server.js and import the cookier-parser, cors and call it for use.
+
+what ever 3rd part middleware you want in your application can be added as per your need.
+
+You can create a folder call config and create some files inside for cors origin handler.
+
+create allowedOrigins.js file
+
+and write some code inside the file
+
+create corsOptions.js file
+and write some code inside
+
+then import it in the server.js and use it.
+
+
+-- Now install dotenv dependence 
+
+npm i dotenv  
+
+this is for environmental variable storing. to help protect some secret variables in your application.
+ 
+After installing, then go to server.js file and require it on top of the page so that you can be able to use it anywhere in your project.
+
+require('dotenv').config()
+
+Then create a dotenv file in the root project
+.env
+then write some code inside.
+then import it in your server.js or anywhere you want to use it.
+
+B8IS5Lmm03KVpO83
+angular_bank_demo
+
+mongodb+srv://<username>:<password>@cluster0.utkcye8.mongodb.net/?retryWrites=true&w=majority
+
+-- Install mongoose
+npm i mongoose
+
+
+-- create folder to store all data module for your application
+Then create data model files inside
+
+User.js and create all the fields inside.
+
+-- mongoose sequence will help you to create a serial auto ID record like a ticket ID number and you can specify where the number will start from. 
+So, install it in your project.
+
+npm i mongoose-sequence
+
+Then import it inside any of the model file where you want to use it.
+
+-- create database connect
+Go to the config folder and create a new file name call it dbConn.js and write you code inside.
+
+dbConn.js
+
+Then go to server.js and import some few items and the connection
+And then create the database connection at the bottom page 
+
+-- create route file to handle all routes for the application.
+create it inside the route folder
+
+-- Create controller for model and data request communication
+Create this folder in the main root of the project.
+controller folder and then create all the function inside
+
+-- Install express-async-handler and bcrty
+
+npm i express-async-handler bcrypt
+
+bcrypt is use to hash password or any text that you want hash
+
+async-handler will help in so many try catch error as we use mongoose in our project
+This will handle same thing that try and catch would have done.
+
+AFter you created your controller, you can test it with postman to see if your api endpoint is working.
+
+-- Installing fontawesome
+npm i @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/angular-fontawesome
 
 
 

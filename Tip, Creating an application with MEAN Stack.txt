@@ -178,6 +178,31 @@ AFter you created your controller, you can test it with postman to see if your a
 npm i @fortawesome/fontawesome-svg-core @fortawesome/free-solid-svg-icons @fortawesome/angular-fontawesome
 
 
+-- Start the frontend development
+
+You need to install nodejs and angular cli in your system before you can start angular project.
+
+-- npm install -global @angular/cli
+
+-- To  create new angular project you do this:
+-- ng new project name
+
+To run your angular project you use this:
+
+-- ng serve
+
+class="fa fa-car" style="font-size:60px;color:red;"
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const Note = require('../models/Note')
+const multer = require("multer");
 
 const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
@@ -23,37 +24,59 @@ const getAllUsers = asyncHandler(async(req, res) =>{
     res.json(users)
 })
 
+const uploadLocation = "public/images"; // this is the image store location in the project
+const storage = multer.diskStorage({
+  destination: (req, file, callBack) => {
+    callBack(null, uploadLocation);
+  },
+  filename: (req, file, callBack) => {
+    var img_name = Date.now() + "." + file.mimetype.split("/")[1];
+    callBack(null, img_name);
+  },
+});
+
+var upload = multer({ storage: storage });
 //@des Create new users
 //@route Post /users
 //@access Private
-const createNewUser = asyncHandler(async(req, res) =>{
-    const {username, password, roles} = req.body
+const createNewUser = asyncHandler (upload.single("file"), async(req, res) =>{
+    // const {username, password, roles} = req.body
+    console.log("Data received: ", req.body);
 
+    const {surname, first_name, gender, 
+        dob, email, username, password, phone, state, city, currency_type,
+        acct_type, country, address, image_photo} = req.body
+    
     // confirm data send
-    if(!username || !password || !Array.isArray(roles) || !roles.length ){
-        return res.status(400).json({message: 'All fields are required'})
+    // if(!username || !password || !Array.isArray(roles) || !roles.length ){
+    //     return res.status(400).json({message: 'All fields are required'})
 
-    }
+    // }
+
+    // if(!username || !password || !surname || !first_name || !gender || !dob || !email || !address ){
+    //     return res.status(400).json({msg: '400'}) // all fields are required
+    // }
     // Check if user already exist
     const userExist = await User.findOne({username}).lean().exec()
     if(userExist){
-        return res.status(409).json({message: 'Username already exist'})
+        return res.status(409).json({msg: '409'}) // user already exist
     }
     // hash the password here
-     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
+     //const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
+    
 
      // now we can destruction the variable
-     const userObject = {username, "password": hashedPwd, roles}
+     const userObject = { surname, first_name, gender, dob, email, phone, state, city, currency_type,
+        acct_type, username, "password": password, country, address, image_photo}
 
      //now let create/save the user details
         const user = await User.create(userObject)
-
         if(user){
-            res.status(201).json({ message: `New user ${username} created`})
+            res.status(201).json({ msg: '201'}) // success message
         } else{
-          res.status(400).json({ message: 'Invalid user data received'})  
+          res.status(401).json({ msg: '401'})  // invalid user details
         }
-
+    //res.status(201).json({ msg: '201'})
     })
 
 //@des Update users

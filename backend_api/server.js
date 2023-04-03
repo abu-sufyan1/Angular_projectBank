@@ -1,6 +1,10 @@
 require('dotenv').config()
 
 const express = require('express')
+
+const registerUser = require("./routes/registerRoutes");
+const loginUser = require("./routes/loginRoutes");
+
 const app = express()
 const path = require('path')
 // import the logger function
@@ -19,7 +23,6 @@ const corsOptions = require('./config/corsOptions') // this will restrict some u
 const connectDB = require('./config/dbConn')
 const mongoose = require('mongoose')
 const PORT = process.env.PORT || 3500
-
 
 console.log(process.env.NODE_ENV)
 
@@ -40,10 +43,14 @@ app.use('/', express.static(path.join(__dirname, 'public')))
 //app.use(express.static ('public')) // this line and above line of code are the same
 // express.static is a built-in middleware
 
+app.use("public/images", express.static("images"));
+
 // app route goes here
 app.use('/', require('./routes/root'))
 
-app.use('/users', require('./routes/userRoutes'))
+app.use('/api/users', require('./routes/userRoutes'))
+app.use("/api", registerUser)
+app.use("/api", loginUser)
 app.use('/notes', require('./routes/noteRoutes'))
 
 // this will handle any request/routes that is not found in the server

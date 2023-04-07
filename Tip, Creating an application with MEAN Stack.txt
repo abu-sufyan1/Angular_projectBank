@@ -252,7 +252,7 @@ profileForm = new FormGroup({
 
 This will hold your input from the html page to send to backend api.
 
-Pls the file code for more details.
+Pls check the file code for more details.
 
 -- Image/file upload using multer
 
@@ -272,9 +272,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage })
 
-
-
-
  const multer = require('multer')
      const upload = multer().single('avatar')
 
@@ -291,8 +288,13 @@ const upload = multer({ storage: storage })
         })
 
 
+-- Angular basic pagination:
+install ngx-pagination
 
+npm i ngx-pagination
 
+Then, import it in app.module.ts and also add it in the export array section.
+Pls check code for more details
 
 
 

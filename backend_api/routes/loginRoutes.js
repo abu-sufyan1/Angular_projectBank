@@ -40,7 +40,7 @@ router.post("/login", async (req, res, next) => {
                     let token = jwt.sign(payload, process.env.SECRET_LOGIN_KEY); // 'secretkey' can be anything of your choice and you can put it in .env file
                     const { password, ...others } = userExist._doc; // this will remove password from the details send to server.
                    
-                    res.json({ msg: '200', token: token, userData: others})
+                    res.send({ msg: '200', token: token, userData: others})
                     //console.log('Environment data!', process.env.SECRET_KEY);
                 }
                });

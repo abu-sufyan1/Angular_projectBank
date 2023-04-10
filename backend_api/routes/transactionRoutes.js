@@ -36,7 +36,10 @@ router.post("/wire_transfer_funds", async (req, res) => {
         transac_nature: 'Debit',
         tran_desc: 'Wire bank transfer',
         createdBy: userId,
-        tid: req.body.tid
+        tid: req.body.tid,
+        tr_year: req.body.tr_year,
+        tr_month: req.body.tr_month,
+        colorcode: 'red',
     });
       if (!userDetails) {
         res.status(402).send({ msg: "402" });
@@ -58,9 +61,7 @@ router.post("/wire_transfer_funds", async (req, res) => {
     } catch (err) {
       res.status(500).send({ msg: "500" });
     }
-  });
-  
- 
+  }); 
   
   // wire transfer pin confirm routes goes here...
 router.post("/confirm_pin", async (req, res, next) => {
@@ -251,7 +252,10 @@ router.get("/wire_fund_send/:id", async (req, res) =>{
       transac_nature: 'Debit',
       tran_desc: 'Domestic bank transfer',
       createdBy: userId,
-      tid: req.body.tid
+      tid: req.body.tid,
+      tr_year: req.body.tr_year,
+      tr_month: req.body.tr_month,
+      colorcode:'red',
   });
     if (!userDetails) {
       res.status(402).send({ msg: "402" });

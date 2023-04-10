@@ -296,6 +296,39 @@ npm i ngx-pagination
 Then, import it in app.module.ts and also add it in the export array section.
 Pls check code for more details
 
+-- Chart graph
+to use chart graph, install this in frontend project 
+
+npm i chart.js
+
+-- How to protect routes, pages in angular
+
+1, Create a route guard as a service 
+( ng g g services/IsAuthenticate)
+ 
+2, Write your conditional code inside to determine if user is logged in or not, it should return true or false
+
+(A) Get user logged in status like localstorage details to know if user login exist or if there token. And assign it to variable in the AuthGuard calss to determine if loggin is true or false.
+
+(B) You can also use variable method to get user loggin status, and assign it to AuthGuard to determine if loggin is true or false.
+
+3, Add the route guard service into app.module providers array section: 
+providers: [ put the service calls name here ... ]
+
+4, Go to the route you want to protect and add the route guard service on it.
+
+5, Go to login page and call the route guard service to assign user login status like, loggin is true.
+
+Pls, check previous project for better underrstanding...
+
+-- Guard service can also be use to check if user level is admin or user. 
+You can also do the user access level programically on the page that you want to give user access to.
+
+
+To use one service class inside another service, you will need to decorate the reciever with @Injectable()  this angular standard way of doing this.
+
+
+
 
 
 

@@ -30,6 +30,9 @@ const transferSchema = new Schema({
         type: String, default: 'Pending'
     },
     tid: String,
+    tr_year: String,
+    tr_month: String,
+    tr_day: String,
     checked: Boolean,
     addeby: {
         type: mongoose.Schema.Types.ObjectId,

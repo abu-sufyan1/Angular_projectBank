@@ -72,7 +72,7 @@ app.all('*', (req, res) =>{
 
 // call the errorhandler here
 app.use(errorHandler)
-
+mongoose.set("strictQuery", false); // this is to suppress some db error
 // create the connection here and wrap the app listener into it
 mongoose.connection.once('open', () =>{
     console.log('connected to MongoDB')

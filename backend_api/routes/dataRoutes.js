@@ -9,6 +9,7 @@ const User = require('../models/User');
 const TransferFund = require('../models/FundTransfer');
 const Officer = require('../models/accountOfficer');
 const Ticket = require('../models/ticketData');
+const Investment = require('../models/investPlan');
 
 
 // route to get logged in user profile details
@@ -235,6 +236,59 @@ router.post("/submit_ticket", async (req, res) => {
   res.status(500).send({ msg: "500" });
 }
 
+});
+
+
+// process invest plan request details here..
+router.post("/submit_investment", async (req, res) => {
+  //sconsole.log("Backend Data", req.body)
+ // res.status(200).send({ msg: "200" });
+      try {
+        let checkUser = await Investment.findOne({ createdBy:  req.body.createdBy }); // here I am checking if user exist then I will get user details
+        if (checkUser) {
+          //console.log("User details: ", userDetails)
+          return res.status(401).send({ msg: '401' }); // Investment is already running
+        } 
+        else if (!checkUser){
+      
+          const sumbitTicket = await Investment.create(req.body)
+          res.status(200).send({ msg: "200" });
+      }
+      // const sumbitTicket = await Investment.create(req.body)
+      //  res.status(200).send({ msg: "200" });
+    } catch (err) {
+      res.status(500).send({ msg: "500" });
+    }
+
+  });
+
+
+  // get finance charts details here..
+router.get("/user_finance_chart/:id", async (req, res) => {
+  let myId = req.params.id;
+  
+  //console.log("User ID", req.params.id);
+  // Getting full month name (e.g. "June")
+  var today = new Date();
+  var month = today.toLocaleString('default', { month: 'long' });
+  
+  //console.log("today Month", month);
+  try {
+    const chartStatement = await TransferFund.find({createdBy: myId })
+    .sort({ createdOn: -1 });
+
+    // const chartStatement = await TransferFund. aggregate([
+    //   { $match: { createdBy: myId } },
+    //   { $group: { tr_year: "$tr_year" } },
+    // ]);
+
+   
+    //console.log("Chart Details ", chartStatement)
+    res.status(200).send(chartStatement);
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
 });
 
   module.exports = router;

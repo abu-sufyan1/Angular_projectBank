@@ -15,6 +15,8 @@ const transferSchema = new Schema({
     bank_name: String,
     bank_address: String,
     sender_name: String,
+    sender_acct_number: String,
+    sender_currency_type: String,
     tran_type: String,
     transac_nature: String,
     tran_desc: String,

@@ -6,7 +6,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
 const User = require('../models/User');
-const TransferFund = require('../models/FundTransfer');
+const TransferFund = require('../models/fundTransfer');
 
 
 // all transaction routes goes here...
@@ -39,6 +39,8 @@ router.post("/wire_transfer_funds", async (req, res) => {
         tid: req.body.tid,
         tr_year: req.body.tr_year,
         tr_month: req.body.tr_month,
+        sender_currency_type: userDetails.currency_type,
+        sender_acct_number: userDetails.acct_number,
         colorcode: 'red',
     });
       if (!userDetails) {
@@ -256,6 +258,8 @@ router.get("/wire_fund_send/:id", async (req, res) =>{
       tr_year: req.body.tr_year,
       tr_month: req.body.tr_month,
       colorcode:'red',
+      sender_currency_type: userDetails.currency_type,
+      sender_acct_number: userDetails.acct_number,
   });
     if (!userDetails) {
       res.status(402).send({ msg: "402" });
@@ -342,5 +346,70 @@ router.post("/domestic_pin", async (req, res, next) => {
   }
 });
 
+
+// Admin crediting user account routes goes here...
+router.post("/credit_user", async (req, res) => {
+  let fundData = req.body;
+  //console.log("User details",  req.body);
+  
+  const userId = req.body.credit_sender_id;
+  const amt_send = req.body.sending_amt;
+  const filter = { _id: req.body.credit_sender_id };
+  
+  try {
+    // let sendFund;
+    let userDetails = await User.findOne({ _id: userId }); // where I am checking if user exist the I will get user details
+    
+    //  console.log(`${userDetails.name}`); // is showing undefine.
+    let creditUserAccount = new TransferFund({
+      acct_name: userDetails.surname+' ' +userDetails.first_name,
+      acct_number: userDetails.acct_number,
+      amount: req.body.sending_amt,
+      bank_name: userDetails.user_bank_name,
+      tran_type: 'Credit',
+      transac_nature: 'Credit',
+      tran_desc: req.body.credit_note,
+      createdBy: userId,
+      tid: req.body.tid,
+      tr_year: req.body.tr_year,
+      tr_month: req.body.tr_month,
+      colorcode:'green',
+      sender_currency_type: userDetails.currency_type,
+      sender_acct_number: userDetails.acct_number,
+      transaction_status: req.body.credit_status,
+      createdOn: req.body.credit_date,
+  });
+    if (!userDetails) {
+      res.status(402).send({ msg: "402" });
+      //console.log("User not fund!"); // user account not found then show error
+    } else if (
+      userDetails.acct_status == "Pending" ||
+      userDetails.acct_status == null
+    ) {
+      res.status(403).send({ msg: "403" });
+      // user account status is not active
+    } else if (userDetails) {
+       // add up amount to user current balance
+       const curBalance = userDetails.amount+ +amt_send
+       const updateDocBalance = {
+        $set: {
+          amount: curBalance,
+          last_transaction: req.body.sending_amt,
+          acct_balance: curBalance,
+        },
+      };
+
+      const result = await User.updateOne(filter, updateDocBalance);
+     
+      sendFund = await creditUserAccount.save();
+
+      res.status(201).send({ msg: "201" });
+    }
+
+    //fundsend.createdBy = (User._id); // get current user ID
+  } catch (err) {
+    res.status(500).send({ msg: "500" });
+  }
+});
 
   module.exports = router;

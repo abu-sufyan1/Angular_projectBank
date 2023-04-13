@@ -10,6 +10,10 @@ const userSchema = new mongoose.Schema({
     state: String,
     city: String,
     currency_type: String,
+    user_bank_name:{
+        type: String,
+        default: 'Agro Bank'
+    },
     acct_type: String,
     username: {
         type: String,
@@ -18,12 +22,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         require: true
     },
+    password_plain: {
+        type: String,
+        },
     country: String,
     address: String,
     image_photo: String,
     acct_cot:  String,
     acct_imf_code: String,
     acct_pin: String,
+    acct_tax_code: String,
     acct_status: {
         type: String,
         default: 'Pending',
@@ -52,6 +60,7 @@ const userSchema = new mongoose.Schema({
     user_role:{
         type: String, default: 'User'
     },
+    createdOn: {type: Date, default: Date.now},
 })
 
 // export it

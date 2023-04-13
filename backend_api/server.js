@@ -6,6 +6,7 @@ const registerUser = require("./routes/registerRoutes");
 const loginUser = require("./routes/loginRoutes");
 const userData = require("./routes/dataRoutes");
 const transactionData = require("./routes/transactionRoutes");
+const adminUpdateData = require("./routes/updateRoute");
 
 const app = express()
 const path = require('path')
@@ -55,6 +56,7 @@ app.use("/api", registerUser)
 app.use("/api", userData)
 app.use("/api", loginUser)
 app.use("/api", transactionData)
+app.use("/api", adminUpdateData)
 app.use('/notes', require('./routes/noteRoutes'))
 
 // this will handle any request/routes that is not found in the server

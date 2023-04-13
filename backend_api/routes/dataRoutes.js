@@ -6,7 +6,7 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
 const User = require('../models/User');
-const TransferFund = require('../models/FundTransfer');
+const TransferFund = require('../models/fundTransfer');
 const Officer = require('../models/accountOfficer');
 const Ticket = require('../models/ticketData');
 const Investment = require('../models/investPlan');
@@ -290,5 +290,231 @@ router.get("/user_finance_chart/:id", async (req, res) => {
     console.log(err.message);
   }
 });
+
+
+
+// admin request routes goes here
+
+// get all users details/profile here..
+router.get("/all-users", async (req, res) => {
+  try {
+    const userDetails = await User.find();
+    if (!userDetails) {
+      console.log("ERROR :: No record found");
+      res.status(404).send({ msg: "404" });
+      // student record failed to create
+    } else {
+      res.status(200).send({data: userDetails});
+      //console.log("Data :: found", officerDetails);
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all active users details/profile here..
+router.get("/active-users", async (req, res) => {
+  try {
+    const activeUserDetails = await User.find({acct_status: 'Active'});
+    //pending user goes here
+    const pendingUserDetails = await User.find({acct_status: 'Pending'});
+    //blocked users goes here
+    const blockedUserDetails = await User.find({acct_status: 'Blocked'});
+    if (!activeUserDetails) {
+      console.log("ERROR :: No record found");
+      res.status(404).send({ msg: "404" });
+      // student record failed to create
+    } else {
+      res.status(200).send({data: activeUserDetails, 
+        blocked: blockedUserDetails, pending: pendingUserDetails});
+     // console.log("Data :: found", activeUserDetails);
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all active users details/profile here..
+router.get("/users-transactions", async (req, res) => {
+  try {
+    const UserTransaction = await TransferFund.find();
+    const limitUserTransaction = await TransferFund.find().sort({_id: -1}).limit(5);
+    if (!UserTransaction) {
+      console.log("ERROR :: No record found");
+      res.status(404).send({ msg: "404" });
+      // student record failed to create
+    } else {
+      res.status(200).send({data: UserTransaction, recent: limitUserTransaction});
+      //console.log("Data :: found", UserTransaction);
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all users investment details here..
+router.get("/users-investments", async (req, res) => {
+  try {
+    const UserInvestment = await Investment.find();
+    if (!UserInvestment) {
+      console.log("ERROR :: No record found");
+      res.status(404).send({ msg: "404" });
+      // student record failed to create
+    } else {
+      res.status(200).send({data: UserInvestment});
+      //console.log("Data :: found", UserTransaction);
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all users details with pagination here..
+router.get("/user-details", async (req, res) => {
+  const page = req.query.page;
+  const userId = req.query.id;
+  const limit = req.query.pageSize;
+  const totalItems = 0;
+  const skip = (page - 1) * limit;
+  try {
+    const allUsers = await User.find().sort({ createdOn: -1 })
+    .skip(skip);
+    //.sort({field_name: sort order})
+    
+    const totalItems = await User.countDocuments();
+    res.status(200).send({ data: allUsers, total_record: totalItems });
+
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all pending users details with pagination here..
+router.get("/pending_users", async (req, res) => {
+  const page = req.query.page;
+  //const userId = req.query.id;
+  const limit = req.query.pageSize;
+  const totalItems = 0;
+  const skip = (page - 1) * limit;
+  try {
+    const allUsers = await User.find({acct_status: 'Pending'}).sort({ createdOn: -1 })
+    .skip(skip);
+    //.sort({field_name: sort order})
+    
+    const totalItems = await User.countDocuments();
+    res.status(200).send({ data: allUsers, total_record: totalItems });
+
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get all users transaction details with pagination here..
+router.get("/user_tran", async (req, res) => {
+  const page = req.query.page;
+  //const userId = req.query.id;
+  const limit = req.query.pageSize;
+  const totalItems = 0;
+  const skip = (page - 1) * limit;
+  try {
+    const allTrans = await TransferFund.find().sort({ createdOn: -1 })
+    .skip(skip);
+    //.sort({field_name: sort order})
+    
+    const totalItems = await TransferFund.countDocuments();
+    res.status(200).send({ data: allTrans, total_record: totalItems });
+
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+
+ // fetch user details to show in the edit form here..
+ router.get("/fetch_edit_user/:id", async (req, res) => {
+  let myId = req.params.id;
+  
+  //console.log("Edit User ID", req.params.id);
+  // Getting full month name (e.g. "June")
+  var today = new Date();
+  var month = today.toLocaleString('default', { month: 'long' });
+  
+  //console.log("today Month", month);
+  try {
+    const userData = await User.find({_id: myId });
+    //console.log("Chart Details ", chartStatement)
+    res.status(200).send({data:userData});
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// delete user details here..
+ router.delete("/delete_user_details/:id", async (req, res) => {
+  let myId = req.params.id;
+  //console.log("Delete ID", req.params.id);
+   try {
+    // find record by the post ID
+    const query = await User.findOne({_id: req.params.id});
+    //console.log("User Details", query);
+    if(!query || query==null) {
+     return res.status(403).send({ msg: "403" }); // No ID found
+    }
+    // delete the record found here
+    const result = await User.deleteOne(query);
+
+    if (result.deletedCount ===1) {
+      res.status(200).send({ msg: "200" });
+      console.log("User delete Details", deleteUser )
+    } else {
+      res.status(404).send({ msg: "404" });
+      console.log("No record deleted.");
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// delete user details here..
+ router.delete("/delete_transactions/:id", async (req, res) => {
+  let myId = req.params.id;
+  //console.log("Delete ID", req.params.id);
+   try {
+    // find record by the post ID
+    const query = await TransferFund.findOne({_id: req.params.id});
+    //console.log("User Details", query);
+    //console.log("User Details", query);
+    if(!query || query==null) {
+      return res.status(403).send({ msg: "403" }); // No ID found
+    }
+    // delete the record found here
+    const deleteRecord = await TransferFund.deleteOne(query);
+
+    if (deleteRecord.deletedCount === 1) {
+      res.status(200).send({ msg: "200" });
+    } else {
+      res.status(404).send({ msg: "404" });
+      console.log("No documents matched the query id.");
+    }
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+
+
+
+
+
 
   module.exports = router;

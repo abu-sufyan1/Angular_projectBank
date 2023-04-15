@@ -7,6 +7,9 @@ const bcrypt = require('bcrypt')
 
 const User = require('../models/User');
 const TransferFund = require('../models/fundTransfer');
+const Investment = require('../models/investPlan')
+
+const InvestorsCreditAccount = require('../models/InvestorsEarning');
 
 
 // all transaction routes goes here...
@@ -409,6 +412,144 @@ router.post("/credit_user", async (req, res) => {
     //fundsend.createdBy = (User._id); // get current user ID
   } catch (err) {
     res.status(500).send({ msg: "500" });
+  }
+});
+
+// Admin debitting user account routes goes here...
+router.post("/debit_user", async (req, res) => {
+  let fundData = req.body;
+  //console.log("User details",  req.body);
+  
+  const userId = req.body.debit_sender_id;
+  const amt_send = req.body.debit_sending_amt;
+  const filter = { _id: req.body.debit_sender_id };
+  
+  try {
+    // let sendFund;
+    let userDetails = await User.findOne({ _id: userId }); // where I am checking if user exist the I will get user details
+    
+    //  console.log(`${userDetails.name}`); // is showing undefine.
+    let debitUserAccount = new TransferFund({
+      acct_name: userDetails.surname+' ' +userDetails.first_name,
+      acct_number: userDetails.acct_number,
+      amount: req.body.debit_sending_amt,
+      bank_name: userDetails.user_bank_name,
+      tran_type: 'Debit',
+      transac_nature: 'Debit',
+      tran_desc: req.body.debit_note,
+      createdBy: userId,
+      tid: req.body.tid,
+      tr_year: req.body.tr_year,
+      tr_month: req.body.tr_month,
+      colorcode:'red',
+      sender_currency_type: userDetails.currency_type,
+      sender_acct_number: userDetails.acct_number,
+      transaction_status: req.body.debit_status,
+      createdOn: req.body.debit_date,
+  });
+    if (!userDetails) {
+      res.status(402).send({ msg: "402" });
+      //console.log("User not fund!"); // user account not found then show error
+    } else if (
+      userDetails.acct_status == "Pending" ||
+      userDetails.acct_status == null
+    ) {
+      res.status(403).send({ msg: "403" });
+      // user account status is not active
+    } 
+    else if (userDetails.amount == null || userDetails.amount < amt_send ) 
+    {
+      res.status(401).send({ msg: "401" }); // Insufficient funds in account
+    } else if (userDetails) {
+       // add up amount to user current balance
+       const curBalance = userDetails.amount - amt_send
+       const updateDocBalance = {
+        $set: {
+          amount: curBalance,
+          last_transaction: req.body.debit_sending_amt,
+          acct_balance: curBalance,
+        },
+      };
+
+      const result = await User.updateOne(filter, updateDocBalance);
+     
+      sendFund = await debitUserAccount.save();
+
+      res.status(201).send({ msg: "201" });
+    }
+
+    //fundsend.createdBy = (User._id); // get current user ID
+  } catch (err) {
+    res.status(500).send({ msg: "500" });
+  }
+});
+
+
+// Admin crediting investors account routes goes here...
+router.post("/credit_investors", async (req, res) => {
+  let fundData = req.body;
+  //console.log("User details",  req.body);
+  
+  const userId = req.body.credit_receiver_id;
+  const amt_send = req.body.sending_amt;
+  const filter = { _id: req.body.credit_receiver_id };
+  
+  try {
+    // let sendFund;
+    let userDetails = await User.findOne({ _id: userId }); // where I am checking if user exist the I will get user details
+    let investDetails = await Investment.findOne({ _id: req.body.credit_record_id})
+    //console.log(`${userDetails.surname}`); // is showing undefine.
+    if (!userDetails) {
+      res.status(402).send({ msg: "402" });
+      //console.log("User not fund!"); // user account not found then show error
+    } else if (
+      userDetails.acct_status == "Pending" ||
+      userDetails.acct_status == null
+    ) {
+      res.status(403).send({ msg: "403" });
+      // user account status is not active
+    } 
+    else if (investDetails.invest_status !="Approved") {
+      return res.status(401).send({ msg: "401" });
+    }
+    else if (userDetails) {
+      let creditUserAccount = new InvestorsCreditAccount({
+        receiver_name: userDetails.surname+' ' +userDetails.first_name,
+        receiver_email: userDetails.email,
+        plan_type: req.body.invest_type,
+        investment_name: req.body.invest_plan,
+        investment_duration: '',
+        investment_notes: req.body.credit_note,
+        transaction_type: 'Credit',
+        roi_amt: req.body.sending_amt,
+        credit_status: 'Successful',
+        receiver_id: req.body.credit_receiver_id,
+        investment_id: req.body.credit_record_id,
+        addedBy:req.body.sender_id,
+        tid: req.body.tid,
+        post_date: req.body.credit_date
+        });
+       // add up amount to user current balance
+      //  const curBalance = userDetails.amount+ +amt_send
+      //  const updateDocBalance = {
+      //   $set: {
+      //     amount: curBalance,
+      //     last_transaction: req.body.sending_amt,
+      //     acct_balance: curBalance,
+      //   },
+      // };
+
+      // const result = await User.updateOne(filter, updateDocBalance);
+     
+      sendFund = await creditUserAccount.save();
+
+      res.status(201).send({ msg: "201" });
+    }
+
+    //fundsend.createdBy = (User._id); // get current user ID
+  } catch (err) {
+    res.status(500).send({ msg: "500" });
+    console.log(err);
   }
 });
 

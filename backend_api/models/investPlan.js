@@ -5,6 +5,7 @@ const investmentPlanSchema = new mongoose.Schema({
     email: String,
     plan_type: String,
     investment_name: String,
+    investment_duration: String,
     invest_amt: {
         type: Number,
         default: '0.0',

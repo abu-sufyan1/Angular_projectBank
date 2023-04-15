@@ -183,6 +183,73 @@ router.post("/add-user", upload.single("file"), async (req, res, next) => {
         }
   });
   
+  // register new admin user and upload profile image
+router.post("/register_admin_users", upload.single("file"), async (req, res, next) => {
+    const file = req.file;
+
+    //const url = req.protocol + '://' + req.get('host') // this will get the host url directly
+
+    const filter = { _id: req.body.first_name };
+
+    const dataReceived = { surname: req.body.surname, first_name: req.body.first_name,
+    gender: req.body.gender, email: req.body.email, username: req.body.username,
+    password: req.body.password, phone: req.body.phone };
+    
+    //get the object values of the request properties received
+    const {surname, first_name, gender, 
+        email, username, password, phone, image_photo} = req.body
+       
+    if(!username || !password || !surname || !first_name ){
+        return res.status(400).json({msg: '400'}) // all fields are required
+    }
+      try {
+    // Check if user already exist
+    const userExist = await User.findOne({username}).lean().exec()
+    if(userExist){
+        return res.status(409).json({msg: '409'}) // user already exist
+    }
+
+    // if user upload image file run this code
+    if(file){
+        const imageUrl = "/images/" + file.filename;
+    // hash the password here
+     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
+    
+     // now we can destruction the variable
+     const userObject = { surname, first_name, gender, email, phone, username, "password": hashedPwd, "password_plain": password, "user_role": "Admin", "image_photo": imageUrl }
+        //now let create/save the user details
+            const user = await User.create(userObject)
+            if(user){
+                res.status(201).json({ msg: '201'}) // success message
+            } else{
+            res.status(401).json({ msg: '401'})  // invalid user details
+            }
+    }
+    // if user did upload image file, run this
+    else if(!file){
+       // const imageUrl = "/images/" + file.filename;
+    // hash the password here
+     const hashedPwd = await bcrypt.hash(password, 10) // salt rounds
+    
+     // now we can destruction the variable
+     const userObject = { surname, first_name, gender, email, phone, username, "password": hashedPwd, "password_plain": password, "user_role": "Admin"}
+        
+        //console.log("details to save", dataReceived);
+     
+        //now let create/save the user details
+            const user = await User.create(userObject)
+            if(user){
+                res.status(201).json({ msg: '201'}) // success message
+            } else{
+            res.status(401).json({ msg: '401'})  // invalid user details
+            }
+        }
+       } catch (err) {
+          res.status(500).send({ msg: "500" });
+          console.log("Error Details", err);
+        }
+  });
+  
   
   // Admin route to update user details
 router.post("/update_user", upload.single("file"), async (req, res, next) => {
@@ -301,6 +368,51 @@ router.post("/update_user", upload.single("file"), async (req, res, next) => {
           res.status(500).send({ msg: "500" });
           console.log("Error Message", err);
         }
+  });
+
+  // Update Admin user details
+router.post("/update_admin_users", async (req, res, next) => {
+    const file = req.file;
+    //console.log("Data see", req.body);
+    const filterUser = { _id: req.body.user_id };
+    try {
+        const user = await User.findOne({ _id: req.body.user_id})
+        if(!user){
+            console.log("User not found")
+            return res.status(404).json({msg: '404'}) // all fields are required
+        }
+        else if(user){
+            console.log("User found");
+            const hashedPwd = await bcrypt.hash(req.body.password, 10) // salt rounds
+
+            const updateDocBalance = {
+                $set: {
+                surname:req.body.surname,
+                first_name: req.body.first_name, 
+                gender: req.body.gender, 
+                email: req.body.email, 
+                phone: req.body.phone, 
+                username: req.body.username, 
+                password_plain: req.body.password,
+                password: hashedPwd 
+                },
+              };
+        const updateUserNow = await User.updateOne(filterUser, updateDocBalance);
+              // update user current balance here
+            if(updateUserNow){
+                res.status(201).json({ msg: '201'}) // success message
+            console.log("Updated Details", updateUserNow.modifiedCount)
+
+                } else{
+                res.status(401).json({ msg: '401'})  // invalid user details
+                }
+        }
+        
+    } catch (error) {
+        res.status(500).send({ msg: "500" });
+        console.log("Error Message", err);
+    }
+
   });
 
   module.exports = router;

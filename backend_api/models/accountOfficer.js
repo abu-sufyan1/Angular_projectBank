@@ -24,6 +24,7 @@ const accountOfficerSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    createdOn: {type: Date, default: Date.now},
  })
 
 // export it

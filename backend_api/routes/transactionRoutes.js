@@ -11,9 +11,12 @@ const Investment = require('../models/investPlan')
 
 const InvestorsCreditAccount = require('../models/InvestorsEarning');
 
+const SystemActivity = require('../models/SystemActivityLogs');
+const Notification = require('../models/NotificationAlert');
+
+
 
 // all transaction routes goes here...
-
 
 // wire transfer routes goes here...
 router.post("/wire_transfer_funds", async (req, res) => {
@@ -58,13 +61,44 @@ router.post("/wire_transfer_funds", async (req, res) => {
       } else if (userDetails.amount == "" || userDetails.amount < amt_send) {
         res.status(405).send({ msg: "405" }); // user account balance is low
       } else if (userDetails) {
+        
         sendFund = await fundsend.save();
+        // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.surname+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Initiated wire fund transfer details',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'Wire transfer details',
+       });
+
+       // create notification for user 
+       const userLogs = Notification.create({
+        alert_username: userDetails.username,
+        alert_name: userDetails.username+' '+userDetails.first_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: userDetails._id,
+        alert_nature: 'Your wire fund transfer initiated! Complete the process for a successful wire fund transfer',
+        alert_status: 1,
+        alert_read_date: ''
+    })
         res.status(200).send({ msg: "200", sendFund });
       }
   
       //fundsend.createdBy = (User._id); // get current user ID
     } catch (err) {
       res.status(500).send({ msg: "500" });
+      console.error("Error occurred", err);
     }
   }); 
   
@@ -105,6 +139,35 @@ router.post("/confirm_pin", async (req, res, next) => {
               },
             }
             const result = await TransferFund.updateOne(filter, updateDoc);
+             // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Wire fund transfer PIN Entered',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'PIN confirmed',
+       });
+
+        // create notification for user 
+        const userLogs = Notification.create({
+          alert_username: userDetails.username,
+          alert_name: userDetails.username+' '+userDetails.first_name,
+          alert_user_ip: '',
+          alert_country: '',
+          alert_browser: '',
+          alert_date:  Date.now(),
+          alert_user_id: userDetails._id,
+          alert_nature: 'Your wire fund transfer PIN validate! Complete the process for a successful wire fund transfer',
+          alert_status: 1,
+          alert_read_date: ''
+      })
             res.status(201).send({ msg: "201" });
           }
        }
@@ -148,6 +211,35 @@ router.post("/cot_confirm", async (req, res) => {
               },
             }
             const result = await TransferFund.updateOne(filter, updateDoc);
+             // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Wire fund transfer COT details',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'Wire transfer COT',
+       });
+
+        // create notification for user 
+        const userLogs = Notification.create({
+          alert_username: userDetails.username,
+          alert_name: userDetails.username+' '+userDetails.first_name,
+          alert_user_ip: '',
+          alert_country: '',
+          alert_browser: '',
+          alert_date:  Date.now(),
+          alert_user_id: userDetails._id,
+          alert_nature: 'Your wire fund transfer COT code validated! Complete the process for a successful wire fund transfer',
+          alert_status: 1,
+          alert_read_date: ''
+      });
             res.status(201).send({ msg: "201" });
           }
        }
@@ -210,6 +302,35 @@ router.post("/imf_confirm", async (req, res) => {
             };
 
           const result_bal = await User.updateOne(filterUser, updateDocBalance);
+           // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Wire fund transfer IMF Entered',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'Wire transfer IMF detail',
+       });
+
+        // create notification for user 
+        const userLogs = Notification.create({
+          alert_username: userDetails.username,
+          alert_name: userDetails.username+' '+userDetails.first_name,
+          alert_user_ip: '',
+          alert_country: '',
+          alert_browser: '',
+          alert_date:  Date.now(),
+          alert_user_id: userDetails._id,
+          alert_nature: 'Your wire fund transfer IMF code validated! Complete the process for a successful wire fund transfer',
+          alert_status: 1,
+          alert_read_date: ''
+      })
           res.status(201).send({ msg: "201" });
         }
      }
@@ -221,10 +342,24 @@ router.post("/imf_confirm", async (req, res) => {
 
 router.get("/wire_fund_send/:id", async (req, res) =>{
   let recId = req.params.id;
-  console.log("Record", recId);
+  //console.log("Record", recId);
   try {
     const transferDetails = await TransferFund.find({tid: recId});
     //console.log(transferDetails);
+     // create notification for user 
+     const userLogs = Notification.create({
+      alert_username: transferDetails.sender_name,
+      alert_name: transferDetails.sender_name,
+      alert_user_ip: '',
+      alert_country: '',
+      alert_browser: '',
+      alert_date:  Date.now(),
+      alert_user_id: transferDetails.createdBy,
+      alert_nature: 'Your fund transfer successful! If you have any questions please contact support',
+      alert_status: 1,
+      alert_read_date: ''
+  });
+
     res.status(200).send(transferDetails);
   } catch (err) {
     res.status(500).json(err.message);
@@ -277,6 +412,35 @@ router.get("/wire_fund_send/:id", async (req, res) =>{
       res.status(405).send({ msg: "405" }); // user account balance is low
     } else if (userDetails) {
       sendFund = await fundsend.save();
+       // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Initiated domestic fund transfer details',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'Domestic transfer details',
+       });
+
+    // create notification for user 
+     const userLogs = Notification.create({
+      alert_username: userDetails.username,
+      alert_name: userDetails.surname+' '+userDetails.first_name,
+      alert_user_ip: '',
+      alert_country: '',
+      alert_browser: '',
+      alert_date:  Date.now(),
+      alert_user_id: userDetails._id,
+      alert_nature: 'Your domestic fund transfer initiated! Please complete the process for a successful transfer',
+      alert_status: 1,
+      alert_read_date: ''
+  });
       res.status(200).send({ msg: "200", sendFund });
     }
 
@@ -340,6 +504,35 @@ router.post("/domestic_pin", async (req, res, next) => {
                 last_transaction: tranAmount.amount,
               },
             };
+             // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: req.body.holder_name,
+        log_receiver_number: req.body.acct_number,
+        log_receiver_bank: req.body.bank_name,
+        log_country: '',
+        log_swift_code: req.body.swift_code,
+        log_desc:'Domestic fund transfer PIN entered',
+        log_amt: req.body.send_amt,
+        log_status: 'Successful',
+        log_nature:'Domestic transfer PIN detail',
+       });
+
+       // create notification for user 
+     const userLogs = Notification.create({
+      alert_username: userDetails.username,
+      alert_name: userDetails.surname+' '+userDetails.first_name,
+      alert_user_ip: '',
+      alert_country: '',
+      alert_browser: '',
+      alert_date:  Date.now(),
+      alert_user_id: userDetails._id,
+      alert_nature: 'Your domestic fund transfer PIN validated! Please complete the process for a successful transfer',
+      alert_status: 1,
+      alert_read_date: ''
+  })
           res.status(201).send({ msg: "201" });
         }
      }
@@ -369,6 +562,7 @@ router.post("/credit_user", async (req, res) => {
       acct_number: userDetails.acct_number,
       amount: req.body.sending_amt,
       bank_name: userDetails.user_bank_name,
+      sender_name: 'Bank Credit',
       tran_type: 'Credit',
       transac_nature: 'Credit',
       tran_desc: req.body.credit_note,
@@ -405,7 +599,34 @@ router.post("/credit_user", async (req, res) => {
       const result = await User.updateOne(filter, updateDocBalance);
      
       sendFund = await creditUserAccount.save();
-
+       // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: userDetails.username+' '+ userDetails.first_name,
+        log_receiver_number:userDetails.acct_number,
+        log_receiver_bank: userDetails.bank_name,
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Crediting user account details',
+        log_amt: req.body.sending_amt,
+        log_status: 'Successful',
+        log_nature:'Admin post credit details',
+       });
+       // create notification for user 
+     const userLogs = Notification.create({
+      alert_username: userDetails.username,
+      alert_name: userDetails.surname+' '+userDetails.first_name,
+      alert_user_ip: '',
+      alert_country: '',
+      alert_browser: '',
+      alert_date:  Date.now(),
+      alert_user_id: userDetails._id,
+      alert_nature: 'Your account has been credited! Please if you have any questions contact support',
+      alert_status: 1,
+      alert_read_date: ''
+  })
       res.status(201).send({ msg: "201" });
     }
 
@@ -434,6 +655,7 @@ router.post("/debit_user", async (req, res) => {
       acct_number: userDetails.acct_number,
       amount: req.body.debit_sending_amt,
       bank_name: userDetails.user_bank_name,
+      sender_name: 'Bank Debit',
       tran_type: 'Debit',
       transac_nature: 'Debit',
       tran_desc: req.body.debit_note,
@@ -472,9 +694,35 @@ router.post("/debit_user", async (req, res) => {
       };
 
       const result = await User.updateOne(filter, updateDocBalance);
-     
+     // create log here
+     const addLogs = await SystemActivity.create({
+      log_username: userDetails.username,
+      log_name: userDetails.username+' '+ userDetails.first_name,
+      log_acct_number: userDetails.acct_number,
+      log_receiver_name: userDetails.username+' '+ userDetails.first_name,
+      log_receiver_number:userDetails.acct_number,
+      log_receiver_bank: userDetails.bank_name,
+      log_country: '',
+      log_swift_code: '',
+      log_desc:'Debiting user account details',
+      log_amt: req.body.sending_amt,
+      log_status: 'Successful',
+      log_nature:'Admin post debit details',
+     })
       sendFund = await debitUserAccount.save();
-
+        // create notification for user 
+        const userLogs = Notification.create({
+          alert_username: userDetails.username,
+          alert_name: userDetails.surname+' '+userDetails.first_name,
+          alert_user_ip: '',
+          alert_country: '',
+          alert_browser: '',
+          alert_date:  Date.now(),
+          alert_user_id: userDetails._id,
+          alert_nature: 'Your account has been debited! Please if you have any questions contact support',
+          alert_status: 1,
+          alert_read_date: ''
+      })
       res.status(201).send({ msg: "201" });
     }
 
@@ -542,7 +790,34 @@ router.post("/credit_investors", async (req, res) => {
       // const result = await User.updateOne(filter, updateDocBalance);
      
       sendFund = await creditUserAccount.save();
-
+        // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: userDetails.username,
+        log_name: userDetails.username+' '+ userDetails.first_name,
+        log_acct_number: userDetails.acct_number,
+        log_receiver_name: userDetails.username+' '+ userDetails.first_name,
+        log_receiver_number:userDetails.acct_number,
+        log_receiver_bank: userDetails.bank_name,
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Crediting user investment account details',
+        log_amt: req.body.sending_amt,
+        log_status: 'Successful',
+        log_nature:'Admin post credit details',
+       });
+          // create notification for user 
+     const userLogs = Notification.create({
+      alert_username: userDetails.username,
+      alert_name: userDetails.surname+' '+userDetails.first_name,
+      alert_user_ip: '',
+      alert_country: '',
+      alert_browser: '',
+      alert_date:  Date.now(),
+      alert_user_id: userDetails._id,
+      alert_nature: 'Your have receive ROI of your investment been credited! Please if you have any questions contact support',
+      alert_status: 1,
+      alert_read_date: ''
+  })
       res.status(201).send({ msg: "201" });
     }
 

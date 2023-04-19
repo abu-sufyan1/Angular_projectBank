@@ -2,7 +2,11 @@ const allowedOrigins = [
     'http://localhost:2400',
     'http://localhost:3000',
     'http://www.zictech-ng.com',
-    'http://localhost:4200'
+    'http://localhost:4200',
+    'http://www.zictech-ng.com',
+    'http://localhost',
+    'http://localhost:3500'
+
     //'https://www.google.com'
 ]
 

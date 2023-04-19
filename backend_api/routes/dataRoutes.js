@@ -20,6 +20,10 @@ const InvestorEarnings = require('../models/InvestorsEarning')
 const UserLog = require('../models/UserLogs')
 const UserSystemLog = require('../models/SystemActivityLogs')
 
+const SystemActivity = require('../models/SystemActivityLogs');
+const Notification = require('../models/NotificationAlert');
+const AppSetting = require('../models/AppSettingDetails');
+
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -33,6 +37,26 @@ const storage = multer.diskStorage({
 });
 
 var upload = multer({ storage: storage });
+
+// this function verify if the token user sent is valid
+function verifyToken(request, res, next) {
+  if (!request.headers.authorization){
+    return res.status(401).send({msg: '401'})
+  }
+  let token = request.headers.authorization.split(' ')[1];
+  if(token === null || token === ''){
+    return res.status(401).send('authorization reuest')
+  }
+  let payload = jwt.verify(token, process.env.SECRET_LOGIN_KEY);
+  if(!payload){
+    return res.status(401).send('authorization reuest');
+  }
+  request.userId = payload.subject
+  next()
+}
+
+
+
 // route to get logged in user profile details
 // get current user account details/profile here..
 router.get("/profile/:id", async (req, res) => {
@@ -108,21 +132,49 @@ router.get("/history-wallet/:id", async (req, res) => {
 router.get("/user_acct_statement", async (req, res) => {
   const page = req.query.page;
   const userId = req.query.id;
-  console.log("my ID", userId);
+  //console.log("my ID", userId);
   const limit = req.query.pageSize;
   const totalItems = 0;
   const skip = (page - 1) * limit;
   try {
-    const accountStatement = await TransferFund.find({createdBy: userId})
-    .sort({ createdOn: -1 }).limit(50)
-    .skip(skip);
-    const totalItems = await TransferFund.countDocuments();
+    const accountStatement = await TransferFund.find({createdBy: req.query.id})
+    .sort({ createdOn: -1 })
+    .skip(skip).limit(limit);
+
+    //console.log("Record", accountStatement);
+
+    const totalItems = await TransferFund.countDocuments({createdBy: req.query.id});
     res.status(200).send({data: accountStatement, total_record: totalItems});
   } catch (err) {
     res.status(500).json(err.message);
     console.log(err.message);
   }
 });
+
+// get user account statement financial record here..
+// router.get("/user_acct_statement", async (req, res) => {
+//   let page = req.query.page;
+//   let limit = req.query.pageSize;
+//   console.log(page, limit);
+//   try {
+//     if (req.query.page && req.query.pageSize) {
+//       const statementPaginate = await TransferFund.paginate(
+//         {},
+//         { page: page, limit: limit }
+//       );
+//       res.status(200).send(statementPaginate);
+//       console.log("All Data", statementPaginate);
+//     } else {
+//       const statementPaginate = await TransferFund.find();
+//       res.status(200).send({data: statementPaginate});
+//     }
+//   } catch (error) {
+//     res.status(400).json({
+//       message: "An error occured: " + error,
+//       error,
+//     });
+//   }
+// });
 // get user account statement financial record here..
 router.get("/user_acct_summary/:id", async (req, res) => {
   let userId = req.params.id;
@@ -140,10 +192,13 @@ router.get("/user_acct_summary/:id", async (req, res) => {
 });
 
 // get user account history record here..
-router.get("/user_tran_history", async (req, res) => {
+router.get("/user_tran_history", verifyToken, async (req, res) => {
+  
+  console.log("Secret Key " + process.env.SECRET_LOGIN_KEY);
+  
   const page = req.query.page;
   const userId = req.query.id;
-  console.log("my ID", userId);
+  //console.log("my ID", userId);
   const limit = req.query.pageSize;
   const totalItems = 0;
   const skip = (page - 1) * limit;
@@ -151,11 +206,16 @@ router.get("/user_tran_history", async (req, res) => {
   try {
     const acctStatement = await TransferFund.find({ createdBy: userId })
       .sort({ createdOn: -1 })
-      .skip(skip);
-    const totalItems = await TransferFund.countDocuments();
-    res.status(200).send({ data: acctStatement, total_record: totalItems });
-    // console.log(acctStatement, totalItems);
-  } catch (err) {
+      .skip(skip).limit(limit);
+    const totalItems = await TransferFund.countDocuments({createdBy: userId});
+    if(!acctStatement){
+      return res.status(401).json({msg: '401'});
+    }
+    else{
+      res.status(200).send({msg: '200', data: acctStatement, total_record: totalItems });
+      // console.log(acctStatement, totalItems);  
+    }
+    } catch (err) {
     res.status(500).json(err);
     console.log(err.message);
   }
@@ -185,9 +245,22 @@ router.post("/block_user_acct", async (req, res) => {
               },
           };
            const result = await User.updateOne(filter, updateDoc);
-            console.log("User details: ", result)
+            //console.log("User details: ", result)
             // check if the record has been updated
             if(result.modifiedCount > 0) {
+              // user logs status here.
+              const userLogs = Notification.create({
+                alert_username: userDetails.username,
+                alert_name: userDetails.surname + ' ' + userDetails.first_name,
+                alert_user_ip: '',
+                alert_country: '',
+                alert_browser: '',
+                alert_date:  Date.now(),
+                alert_user_id: userDetails._id,
+                alert_nature: 'Your account was currently blocked! contact admin for support and unlocked the account',
+                alert_status: 1,
+                alert_read_date: ''
+            })
               res.status(201).send({ msg: "201" });
             }
             else {
@@ -251,6 +324,33 @@ router.post("/submit_ticket", async (req, res) => {
       else if (checkUser){
     
         const sumbitTicket = await Ticket.create(req.body)
+          // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: checkUser.username,
+        log_name: checkUser.surname+' '+checkUser.first_name,
+        log_acct_number: checkUser.acct_number,
+        log_receiver_name: '',
+        log_receiver_number:'',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Created support ticket details',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Ticket created',
+       });
+       const userLogs = Notification.create({
+        alert_username: checkUser.username,
+        alert_name: checkUser.surname + ' ' + checkUser.first_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: checkUser._id,
+        alert_nature: 'You created a ticket for support! If you did not receive any feedback, please be patient',
+        alert_status: 1,
+        alert_read_date: ''
+    })
         res.status(200).send({ msg: "200" });
      }
   } catch (err) {
@@ -272,6 +372,34 @@ router.post("/submit_investment", async (req, res) => {
         else if (!checkUser){
       
           const sumbitTicket = await Investment.create(req.body)
+           // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: req.body.username,
+            log_name: req.body.sender_name,
+            log_acct_number: req.body.email,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Investment processing submitted',
+            log_amt: request.body.invest_amt,
+            log_status: 'Successful',
+            log_nature:'Submitted investment',
+           });
+
+           const userLogs = Notification.create({
+            alert_username: req.body.username,
+            alert_name: req.body.sender_name,
+            alert_user_ip: '',
+            alert_country: '',
+            alert_browser: '',
+            alert_date:  Date.now(),
+            alert_user_id: req.body.createdBy,
+            alert_nature: 'You submitted application for an investment package! If you did not receive any feedback, please contact support',
+            alert_status: 1,
+            alert_read_date: ''
+        })
           res.status(200).send({ msg: "200" });
       }
       // const sumbitTicket = await Investment.create(req.body)
@@ -296,14 +424,67 @@ router.get("/user_finance_chart/:id", async (req, res) => {
     const chartStatement = await TransferFund.find({createdBy: myId })
     .sort({ createdOn: -1 });
 
-    // const chartStatement = await TransferFund. aggregate([
-    //   { $match: { createdBy: myId } },
-    //   { $group: { tr_year: "$tr_year" } },
-    // ]);
+    const chartStatementGroup = await TransferFund. aggregate([
+      { $match: { createdBy: myId } },
+      { $group: { _id: "$transac_nature", amount: { $sum: "$amount" }} },
+    ]);
 
    
-    //console.log("Chart Details ", chartStatement)
-    res.status(200).send(chartStatement);
+    //console.log("Chart Details ", chartStatementGroup)
+    res.status(200).send({resultData: chartStatement, data:chartStatementGroup});
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+ // get user notification here here..
+ router.get("/user_notification/:id", async (req, res) => {
+  let myId = req.params.id;
+  var today = new Date();
+  var month = today.toLocaleString('default', { month: 'long' });
+  
+  //console.log("today Month", month);
+  try {
+    const notifyDetails = await Notification.find({alert_user_id: myId, alert_status: 1 })
+    .sort({ createdOn: -1 }).limit(4);
+    if(!notifyDetails){
+      return res.status(404).send({msg: '404'});
+    }
+    else if(notifyDetails){
+    //console.log("Notification Details ", notifyDetails)
+    res.status(200).send(notifyDetails);
+    }
+    
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// mark user notification read here..
+ router.get("/user_notification_read/:id", async (req, res) => {
+  let myId = req.params.id;
+  var today = new Date();
+  var month = today.toLocaleString('default', { month: 'long' });
+  const filter = {alert_user_id: myId, alert_status: 1}
+  //console.log("today Month", month);
+  try {
+    const notifyDetailsRead = await Notification.find({alert_user_id: myId, alert_status: 1 })
+    .sort({ createdOn: -1 });
+    if(!notifyDetailsRead){
+      console.log("Notification Not Found")
+    }
+    else if(notifyDetailsRead){
+      const updateDoc = {
+        $set: {
+          alert_status: 0,
+          },
+      }
+      const updateRead = await Notification.updateMany(filter, updateDoc);
+      //console.log("Notification Read ", updateRead)
+      res.status(200).send({msg: '200', updateRead});
+    }
   } catch (err) {
     res.status(500).json(err);
     console.log(err.message);
@@ -311,8 +492,7 @@ router.get("/user_finance_chart/:id", async (req, res) => {
 });
 
 // admin request routes goes here
-
-// get all users details/profile here..
+// count all users and show in dashboard here..
 router.get("/all-users", async (req, res) => {
   try {
     const userDetails = await User.find().select('-password');
@@ -373,7 +553,7 @@ router.get("/active-users", async (req, res) => {
 router.get("/users-transactions", async (req, res) => {
   try {
     const UserTransaction = await TransferFund.find();
-    const limitUserTransaction = await TransferFund.find().sort({_id: -1}).limit(5);
+    const limitUserTransaction = await TransferFund.find().sort({creditOn: -1}).limit(5);
     if (!UserTransaction) {
       console.log("ERROR :: No record found");
       res.status(404).send({ msg: "404" });
@@ -414,8 +594,8 @@ router.get("/user-details", async (req, res) => {
   const totalItems = 0;
   const skip = (page - 1) * limit;
   try {
-    const allUsers = await User.find({user_role: "User"}).sort({ createdOn: -1 })
-    .skip(skip);
+    const allUsers = await User.find({user_role: "User", acct_status: "Active"}).sort({ createdOn: -1 })
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     
     const totalItems = await User.countDocuments();
@@ -435,8 +615,9 @@ router.get("/pending_users", async (req, res) => {
   const totalItems = 0;
   const skip = (page - 1) * limit;
   try {
-    const allUsers = await User.find({acct_status: 'Pending'}).sort({ createdOn: -1 })
-    .skip(skip);
+    const allUsers = await User.find({acct_status: 'Pending', user_role: "User"}).sort({ createdOn: -1 })
+    .skip(skip).limit(limit).select('-password');
+    
     //.sort({field_name: sort order})
     //console.log("result Data", allUsers)
     const totalItems = await User.countDocuments();
@@ -457,7 +638,7 @@ router.get("/user_tran", async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const allTrans = await TransferFund.find().sort({ createdOn: -1 })
-    .skip(skip);
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     
     const totalItems = await TransferFund.countDocuments();
@@ -545,14 +726,12 @@ router.get("/user_tran", async (req, res) => {
 
 // update angro plan investment details here..
 router.post("/update_angro_invest", async (req, res) => {
-
   //console.log("body data", req.body);
   try {
-
-    
+    const findUser = await User.findOne({_id: req.body.user_id})
+    //console.log("User Data", findUser)
     const checkUser = await AngroPlan.find().count(); // here I am checking if user exist then I will get user details
         //console.log("database data ", checkUser)
-    
     if (checkUser != 0) {
       const updateDoc = {
         $set: {
@@ -562,6 +741,21 @@ router.post("/update_angro_invest", async (req, res) => {
         },
       }
       const result = await AngroPlan.updateOne(updateDoc);
+       // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: findUser.username,
+        log_name: findUser.username+' '+ findUser.first_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Updated angro investment ROI rate',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Updated angro investment',
+       })
      return res.status(200).send({msg: "200"});
           //console.log("User details: ", checkUser)
           //return res.status(404).send({ msg: '404' }); // Investment is already running
@@ -573,6 +767,22 @@ router.post("/update_angro_invest", async (req, res) => {
       gold_plan: req.body.gold_amt,
     })
     saveRecord = await sumbitTicket.save();
+     // create log here
+      // create log here
+      const addLogs = await SystemActivity.create({
+        log_username: findUser.username,
+        log_name: findUser.username+' '+ findUser.first_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Updated angro investment processing submitted',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Updated angro investment',
+       })
     res.status(200).send({msg: "200"});
   }
     
@@ -584,7 +794,9 @@ router.post("/update_angro_invest", async (req, res) => {
 
 // update stock plan investment details here..
 router.post("/update_stock_invest", async (req, res) => {
+  const findUser = await User.findOne({_id: req.body.user_id})
  try {
+    
     const checkUser = await StockPlan.find().count(); // here I am checking if user exist then I will get user details
      if (checkUser != 0) {
       const updateDoc = {
@@ -595,6 +807,22 @@ router.post("/update_stock_invest", async (req, res) => {
         },
       }
       const result = await StockPlan.updateOne(updateDoc);
+       // create log here
+        // create log here
+        const addLogs = await SystemActivity.create({
+          log_username: findUser.username,
+          log_name: findUser.surname+' '+ findUser.first_name,
+          log_acct_number: '',
+          log_receiver_name: '',
+          log_receiver_number: '',
+          log_receiver_bank: '',
+          log_country: '',
+          log_swift_code: '',
+          log_desc:'Updated stock investment ROI rate',
+          log_amt: '',
+          log_status: 'Successful',
+          log_nature:'Updated stock investment',
+         })
      return res.status(200).send({msg: "200"});
       }
     else if(checkUser == null || checkUser == undefined || checkUser == 0) {
@@ -604,6 +832,21 @@ router.post("/update_stock_invest", async (req, res) => {
       gold_plan: req.body.gold_amt,
     })
     saveRecord = await sumbitTicket.save();
+      // create log here
+      const addLogs = await SystemActivity.create({
+        log_username: findUser.username,
+        log_name: findUser.username+' '+ findUser.first_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Updated angro investment processing submitted',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Updated angro investment',
+       })
     res.status(200).send({msg: "200"});
   }
     
@@ -616,6 +859,7 @@ router.post("/update_stock_invest", async (req, res) => {
 // update fx plan investment details here..
 router.post("/update_fx_invest", async (req, res) => {
  try {
+     const findUser = await User.findOne({_id: req.body.user_id})
     const checkUser = await FXPlan.find().count(); // here I am checking if user exist then I will get user details
      if (checkUser != 0) {
       const updateDoc = {
@@ -626,6 +870,21 @@ router.post("/update_fx_invest", async (req, res) => {
         },
       }
       const result = await FXPlan.updateOne(updateDoc);
+        // create log here
+        const addLogs = await SystemActivity.create({
+          log_username: findUser.username,
+          log_name: findUser.surname+' '+ findUser.first_name,
+          log_acct_number: '',
+          log_receiver_name: '',
+          log_receiver_number: '',
+          log_receiver_bank: '',
+          log_country: '',
+          log_swift_code: '',
+          log_desc:'Updated FX investment ROI rate',
+          log_amt: '',
+          log_status: 'Successful',
+          log_nature:'Updated FX investment',
+         })
      return res.status(200).send({msg: "200"});
       }
     else if(checkUser == null || checkUser == undefined || checkUser == 0) {
@@ -635,6 +894,21 @@ router.post("/update_fx_invest", async (req, res) => {
       gold_plan: req.body.gold_amt,
     })
     saveRecord = await sumbitTicket.save();
+       // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: findUser.username,
+        log_name: findUser.surname+' '+ findUser.first_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Updated angro investment processing submitted',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Updated angro investment',
+       })
     res.status(200).send({msg: "200"});
   }
     
@@ -670,7 +944,7 @@ router.get("/all_investors", async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const allInvestors = await Investment.find().sort({ createdOn: -1 })
-    .skip(skip);
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     
     const totalItems = await Investment.countDocuments();
@@ -691,7 +965,7 @@ router.get("/investors_earnings", async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const allInvestors = await InvestorEarnings.find().sort({ createdOn: -1 })
-    .skip(skip);
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     
     const totalItems = await InvestorEarnings.countDocuments();
@@ -736,6 +1010,21 @@ router.delete("/delete_investors/:id", async (req, res) => {
     const DeleteInvestor = await Investment.deleteOne(queryInvestor);
 
     if (DeleteInvestor.deletedCount ===1) {
+      // create log here
+      const addLogs = await SystemActivity.create({
+        log_username: 'Amin',
+        log_name: '',
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number:'',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Delete investor user account details',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Admin delete account details',
+       })
       res.status(200).send({ msg: "200" });
       
     } else {
@@ -752,7 +1041,6 @@ router.delete("/delete_investors/:id", async (req, res) => {
 router.delete("/approve_invest_investors/:id", async (req, res) => {
   let myId = req.params.id;
   const filter = { _id: req.params.id };
-  console.log("Approval ID", req.params.id);
    try {
     // find record by the post ID
     const queryInvestor = await Investment.findOne({_id: req.params.id});
@@ -767,9 +1055,36 @@ router.delete("/approve_invest_investors/:id", async (req, res) => {
           },
       }
       const DeleteInvestor = await Investment.updateOne(filter, updateDoc);
-      console.log("Update status", DeleteInvestor);
-
       if (DeleteInvestor.modifiedCount ===1) {
+        // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: 'Admin',
+        log_name: '',
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number:'',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Approve user investment account details',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Admin approved investment details',
+       });
+
+       // Create notification for user
+       const userLogs = Notification.create({
+        alert_username: queryInvestor.username,
+        alert_name: queryInvestor.sender_name,
+        alert_user_ip: '',
+        alert_country: '',
+        alert_browser: '',
+        alert_date:  Date.now(),
+        alert_user_id: queryInvestor.createdBy,
+        alert_nature: 'Your investment package was approved! You can contact admin for more details',
+        alert_status: 1,
+        alert_read_date: ''
+    })
         res.status(200).send({ msg: "200" });
         
       } else {
@@ -792,7 +1107,7 @@ router.get("/user_logs", async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const all_logs = await UserLog.find().sort({ createdOn: -1 })
-    .skip(skip);
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     const totalItems = await UserLog.countDocuments();
     res.status(200).send({ data: all_logs, total_record: totalItems });
@@ -812,11 +1127,30 @@ router.get("/user_system_logs", async (req, res) => {
   const skip = (page - 1) * limit;
   try {
     const all_SystemLogs = await UserSystemLog.find().sort({ createdOn: -1 })
-    .skip(skip);
+    .skip(skip).limit(limit);
     //.sort({field_name: sort order})
     const totalItems = await UserSystemLog.countDocuments();
     res.status(200).send({ data: all_SystemLogs, total_record: totalItems });
 
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// get company name details here..
+router.get("/company_name", async (req, res) => {
+ 
+  try {
+    const comp = await AppSetting.findOne();
+    //.sort({field_name: sort order})
+    if(!comp){
+      res.status(404).send({msg: "404"})
+    }
+    else if(comp){
+      res.status(200).send(comp);
+    }
+     
   } catch (err) {
     res.status(500).json(err);
     console.log(err.message);
@@ -838,6 +1172,7 @@ router.delete("/system_logs_delete/:id", async (req, res) => {
     const DeleteLogs = await UserSystemLog.deleteOne(queryLogs);
 
     if (DeleteLogs.deletedCount ===1) {
+     
       res.status(200).send({ msg: "200" });
       
     } else {
@@ -858,8 +1193,10 @@ router.post("/update_officer", upload.single("file"), async (req, res) => {
 
   console.log("body data", req.body);
   try {
+    const findUser = await User.findOne({_id: req.body.user_id})
+
     const checkOfficer = await Officer.find().count(); // here I am checking if user exist then I will get user details
-        console.log("database data ", checkOfficer)
+        //console.log("database data ", checkOfficer)
        
     if (checkOfficer != 0) {
       const updateDoc = {
@@ -878,6 +1215,21 @@ router.post("/update_officer", upload.single("file"), async (req, res) => {
         },
       }
       const result = await Officer.updateOne(updateDoc);
+       // create log here
+       const addLogs = await SystemActivity.create({
+        log_username: findUser.username,
+        log_name: findUser.username+' '+ findUser.first_name,
+        log_acct_number: '',
+        log_receiver_name: '',
+        log_receiver_number: '',
+        log_receiver_bank: '',
+        log_country: '',
+        log_swift_code: '',
+        log_desc:'Updated account officer details',
+        log_amt: '',
+        log_status: 'Successful',
+        log_nature:'Account officer updated',
+       })
      return res.status(200).send({msg: "200"});
           //console.log("User details: ", checkUser)
           //return res.status(404).send({ msg: '404' }); // Investment is already running
@@ -896,6 +1248,107 @@ router.post("/update_officer", upload.single("file"), async (req, res) => {
           bank_name: req.body.bank_name,
           acct_status: req.body.acct_status,
     })
+    saveRecord = await officerData.save();
+    res.status(200).send({msg: "200"});
+  }
+    
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err.message);
+  }
+});
+
+// update bank officer profile details here..
+router.post("/system_setup", upload.single("file"), async (req, res) => {
+  //console.log("body data", req.body);
+  const file = req.file;
+  let imageUrl = '';
+
+  //console.log("body data", req.body);
+  try {
+    const findUser = await User.findOne({_id: req.body.user_id})
+
+    const checkSystem = await AppSetting.find().count(); // here I am checking if user exist then I will get user details
+    //console.log("database data ", checkSystem)
+       if(file && checkSystem != 0){
+        const imageUrl = "/images/" + file.filename;
+          const updateDoc = {
+            $set: {
+              app_name: req.body.business_name,
+              app_short_name: req.body.business_short_name,
+              app_logo: imageUrl,
+              createdBy: req.body.user_id,
+              },
+          }
+          const result = await AppSetting.updateOne(updateDoc);
+           // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: findUser.username,
+            log_name: findUser.username+' '+ findUser.first_name,
+            log_acct_number: '',
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Updated system application details',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Application details updated',
+           })
+         return res.status(200).send({msg: "200"});
+              //console.log("User details: ", checkUser)
+              //return res.status(404).send({ msg: '404' }); // Investment is already running
+            }
+       
+       else if(!file && checkSystem != 0){
+          const updateDoc = {
+            $set: {
+              app_name: req.body.business_name,
+              app_short_name: req.body.business_short_name,
+              createdBy: req.body.user_id,
+              },
+          }
+          const result = await AppSetting.updateOne(updateDoc);
+           // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: findUser.username,
+            log_name: findUser.username+' '+ findUser.first_name,
+            log_acct_number: '',
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Updated system application details',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Application details updated',
+           })
+         return res.status(200).send({msg: "200"});
+              //console.log("User details: ", checkUser)
+              //return res.status(404).send({ msg: '404' }); // Investment is already running
+            }
+       
+    else if(checkSystem == null || checkSystem == undefined || checkSystem == 0 && !file) {
+     
+        const officerData = await AppSetting.create({
+          app_name: req.body.business_name,
+          app_short_name: req.body.business_short_name,
+          app_logo: '',
+          createdBy: req.body.user_id,
+          })
+    saveRecord = await officerData.save();
+    res.status(200).send({msg: "200"});
+  } else if(checkSystem == null || checkSystem == undefined || checkSystem == 0 && file) {
+
+        const imageUrl = "/images/" + file.filename;
+        const officerData = await AppSetting.create({
+          app_name: req.body.business_name,
+          app_short_name: req.body.business_short_name,
+          app_logo: imageUrl,
+          createdBy: req.body.user_id,
+          })
     saveRecord = await officerData.save();
     res.status(200).send({msg: "200"});
   }

@@ -42,6 +42,7 @@ const transferSchema = new Schema({
         // this will get the user ID automatically by mongoose in nodejs
     },
     createdOn: {type: Date, default: Date.now},
+    creditOn: {type: Date, default: Date.now},
 });
 
 transferSchema.plugin(mongoosePaginate)

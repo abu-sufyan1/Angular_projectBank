@@ -46,7 +46,7 @@ https://medium.com/swlh/using-git-how-to-go-back-to-a-previous-commit-8579ccc818
 
 Building the backend of the application:
 
-STeps to follow:
+Steps to follow:
 
 Install node in your system
 Install npm in your system
@@ -174,7 +174,7 @@ create it inside the route folder
 Create this folder in the main root of the project.
 controller folder and then create all the function inside
 
--- Install express-async-handler and bcrty
+-- Install express-async-handler and bcrypt
 
 npm i express-async-handler bcrypt
 
@@ -305,19 +305,24 @@ npm i chart.js
 
 1, Create a route guard as a service 
 ( ng g g services/IsAuthenticate)
+(ng g guard auth)
  
+1B, Go to your service provider (dataService.ts) and create a function to get user loggin status and then go to the auth guard.ts and call the dataService to use to receive loggin status into the guard.
+
+please, check previous code for better understanding
+
 2, Write your conditional code inside to determine if user is logged in or not, it should return true or false
 
-(A) Get user logged in status like localstorage details to know if user login exist or if there token. And assign it to variable in the AuthGuard calss to determine if loggin is true or false.
+(A) Get user logged in status like localstorage details to know if user login exist or if there token. And assign it to variable in the AuthGuard class to determine if loggin is true or false.
 
 (B) You can also use variable method to get user loggin status, and assign it to AuthGuard to determine if loggin is true or false.
 
 3, Add the route guard service into app.module providers array section: 
-providers: [ put the service calls name here ... ]
+providers: [ put the service class name here ... ]
 
 4, Go to the route you want to protect and add the route guard service on it.
 
-5, Go to login page and call the route guard service to assign user login status like, loggin is true.
+5, Go to login page and call the route guard service to assign user login status like, loggin is true. or just use localStorage item to do that, it easier.
 
 Pls, check previous project for better underrstanding...
 
@@ -328,10 +333,60 @@ You can also do the user access level programically on the page that you want to
 To use one service class inside another service, you will need to decorate the reciever with @Injectable()  this angular standard way of doing this.
 
 
+-- Strong security warning and how to solve it.
+localstorage saving token is not enough to protect your application from user that is not login from access it. any body can write/create a token directly into the localstorage from the broswer so, it is very important to always check token is valid or not in your application.
+
+--- How to verify token is valid
+
+We need to verify via the server, to do that we need to use angular es6 http interceptor. This will help protect and verify if the token is valid or not in your application.
+
+Steps to follow:
 
 
+1, generate service to do this
+(ng g s token-interceptor)
+2, Open the file and import{HttpInterceptor}
+3, add implements HttpInterceptor to the interface
+4, create the interceptor function to do the checking.
+Check previous code for more understanding
+5, register it in app.module.ts
+add HTTP_INTERCEPTOR to the same import where httpClientModule is 
+then, import the token interceptor service,
+then add to the provider array below.
+
+When adding it, it should be in an object array! Please, check previous code for better understanding
+
+6, Go to your service.ts and create a function that get token from localStorage and the pass this to the interceptor service by calling the dataService inside the interceptor service.
+
+(getToken){
+return localStorage.getItem('token')
+}
+
+7, Go back to interceptor service and import dataService into it
+add injector to Injectable line
+in the constructor add private injector: Injector. This will enable you have access to dataService and then call the getToken function.
+
+Please, check previous code for better understanding
 
 
+-- How to verify token in the backend
 
+We need to implement a middleware to verify a json web token in the backend. 
+This middle is that one that gets excuted but any other function will be executed.
+
+Open your server/api.js in yor backend application and create a new function to handle this.
+
+Please, check previous code for better understanding
+then add the verify function to the route you want to protect from the backend if the token is not valid it will send user back
+
+Then go back to your frontend application to handle the error message like showing alert message to user if the status is 401 or redirect user to login page if the error is httpErrorResponse.
+
+err => {
+if(err instanceof HttpErrorResponse){
+if(err.status === 401){
+this._router.navigate(['/login'])
+}
+}
+}
 
 

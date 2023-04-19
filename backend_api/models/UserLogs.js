@@ -13,6 +13,7 @@ const userLogSchema = new mongoose.Schema({
         type: Date
     },
     login_nature: String,
+    user_log_id: String,
     login_status: {
         type: Number,
         default: 0,

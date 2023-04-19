@@ -5,7 +5,8 @@ const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcrypt')
 
 const multer = require("multer");
-const User = require('../models/User')
+const User = require('../models/User');
+const SystemActivity = require('../models/SystemActivityLogs');
 
 const uploadLocation = "public/images"; // this is the image store location in the project
 const storage = multer.diskStorage({
@@ -78,6 +79,21 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
+                 // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'New user account added',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'New user registration',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             } else{
             res.status(401).json({ msg: '401'})  // invalid user details
@@ -98,6 +114,21 @@ router.post("/register", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
+             // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'New user account registered',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'New user added',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             } else{
             res.status(401).json({ msg: '401'})  // invalid user details
@@ -153,6 +184,22 @@ router.post("/add-user", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
+            
+            // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Registered new user account',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Added new user',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             } else{
             res.status(401).json({ msg: '401'})  // invalid user details
@@ -173,6 +220,21 @@ router.post("/add-user", upload.single("file"), async (req, res, next) => {
         //now let create/save the user details
             const user = await User.create(userObject)
             if(user){
+            // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Registered new user account',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Added new user',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             } else{
             res.status(401).json({ msg: '401'})  // invalid user details
@@ -219,6 +281,21 @@ router.post("/register_admin_users", upload.single("file"), async (req, res, nex
      const userObject = { surname, first_name, gender, email, phone, username, "password": hashedPwd, "password_plain": password, "user_role": "Admin", "image_photo": imageUrl }
         //now let create/save the user details
             const user = await User.create(userObject)
+            // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Registered new admin account',
+            log_amt: '',
+            log_status: 'Successfully registered',
+            log_nature:'Added new user',
+           })
             if(user){
                 res.status(201).json({ msg: '201'}) // success message
             } else{
@@ -238,6 +315,21 @@ router.post("/register_admin_users", upload.single("file"), async (req, res, nex
      
         //now let create/save the user details
             const user = await User.create(userObject)
+            // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Registered new admin account',
+            log_amt: '',
+            log_status: 'Successfully registered',
+            log_nature:'Added new user',
+           })
             if(user){
                 res.status(201).json({ msg: '201'}) // success message
             } else{
@@ -316,6 +408,21 @@ router.post("/update_user", upload.single("file"), async (req, res, next) => {
         // update user current balance here
 
             if(updateUserNow){
+            // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: req.body.username,
+            log_name: req.body.surname+' '+req.body.first_name,
+            log_acct_number: req.body.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Updated user account',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Update new user details',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             console.log("Updated Details", updateUserNow.modifiedCount)
             } else{
@@ -356,6 +463,21 @@ router.post("/update_user", upload.single("file"), async (req, res, next) => {
     const updateUserNow = await User.updateOne(filterUser, updateDocBalance);
     // update user current balance here
         if(updateUserNow){
+          // create log here
+          const addLogs = await SystemActivity.create({
+            log_username: req.body.username,
+            log_name: req.body.surname+' '+req.body.first_name,
+            log_acct_number: req.body.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Updated user account',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Update new user details',
+           })
             res.status(201).json({ msg: '201'}) // success message
         console.log("Updated Details", updateUserNow.modifiedCount)
 
@@ -400,6 +522,21 @@ router.post("/update_admin_users", async (req, res, next) => {
         const updateUserNow = await User.updateOne(filterUser, updateDocBalance);
               // update user current balance here
             if(updateUserNow){
+              // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Updated admin user account',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Update admin user details',
+           })
                 res.status(201).json({ msg: '201'}) // success message
             console.log("Updated Details", updateUserNow.modifiedCount)
 
@@ -413,6 +550,86 @@ router.post("/update_admin_users", async (req, res, next) => {
         console.log("Error Message", err);
     }
 
+  });
+
+  // Update user password details
+router.post("/user_update_password", async (req, res, next) => {
+    //console.log("Data see", req.body);
+    const filterUser = { _id: req.body.user_id };
+    try {
+        const user = await User.findOne({ _id: req.body.user_id})
+        if(!user){
+            return res.status(404).json({msg: '404'}) // user not found required
+        }
+        else if(user){
+            //console.log("User found");
+            const hashedPwd = await bcrypt.hash(req.body.new_password, 10) // salt rounds
+            const updateDocUser = {
+                $set: {
+                password_plain: req.body.new_password,
+                password: hashedPwd 
+                },
+              };
+        const updateUserNow = await User.updateOne(filterUser, updateDocUser);
+              // update user current balance here
+            if(updateUserNow){
+              // create log here
+           const addLogs = await SystemActivity.create({
+            log_username: user.username,
+            log_name: user.surname+' '+user.first_name,
+            log_acct_number: user.acct_number,
+            log_receiver_name: '',
+            log_receiver_number: '',
+            log_receiver_bank: '',
+            log_country: '',
+            log_swift_code: '',
+            log_desc:'Password account updated successfully',
+            log_amt: '',
+            log_status: 'Successful',
+            log_nature:'Password details updated',
+           })
+                res.status(201).json({ msg: '201'}) // success message
+            //console.log("Updated Details", updateUserNow.modifiedCount)
+                } else{
+                res.status(401).json({ msg: '401'})  // invalid user details
+                }
+        }
+        
+    } catch (error) {
+        res.status(500).send({ msg: "500" });
+        console.log("Error Message", error);
+    }
+
+  });
+
+  // forget password user request details
+router.post("/verify_reset_password", async (req, res, next) => {
+    //console.log("Data see", req.body);
+
+    // var a = req.body.forget_details;
+    // var b = parseInt(a);
+    // console.log("Data Integer", b);
+
+    if(req.body.forget_details == '' || req.body.forget_details == null) {
+        return res.status(400).json({msg: '400'}) // some fields are required
+    }
+    try {
+        const user = await User.findOne({$or: [{email: req.body.forget_details},
+                     {username: req.body.forget_details}]})
+         if (!user){
+            console.log('Email user not found ');
+            return res.status(404).json({msg: '404'})
+          } 
+         else if (user.acct_status != 'Active'){
+            return res.status(401).json({msg: '401'})
+         }
+         else if (user && user.acct_status == 'Active'){
+        res.status(200).json({msg: '200', user})
+         }
+    } catch (error) {
+        res.status(500).send({ msg: "500" });
+        console.log("Error Message", error);
+    }
   });
 
   module.exports = router;
